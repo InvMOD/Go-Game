@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Go-Game with raylib",
+            "type": "process",
+            "command": "C:\\raylib\\w64devkit\\bin\\g++.exe",
+            "args": [
+                "-std=c++17",
+                "-Wall",
+                "-Wextra",
+                "-IC:\\raylib\\raylib\\src",
+                "Board\\board.cpp",
+                "Board\\board_test.cpp",
+                "C:\\raylib\\raylib\\src\\libraylib.a",
+                "-lopengl32",
+                "-lgdi32",
+                "-lwinmm",
+                "-o",
+                "${workspaceFolder}\\Go-Game.exe"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
