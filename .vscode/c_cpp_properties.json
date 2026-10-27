@@ -2,7 +2,7 @@
     "configurations": [
         {
             "name": "Win32",
-            "compilerPath": "C:\\Strawberry\\c\\bin\\g++.exe",
+            "compilerPath": "C:\\raylib\\w64devkit\\bin\\g++.exe",
             "includePath": [
                 "${workspaceFolder}/**",
                 "C:\\raylib\\raylib\\src"

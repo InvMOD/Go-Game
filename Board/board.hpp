@@ -1,6 +1,6 @@
 #pragma once
-#include "raylib.h" 
 #include <vector>
+#include "../lib/raylib.h"
 
 const int BOARD_SIZE = 9;
 
@@ -20,12 +20,15 @@ public:
     const int margin = 60;
     const int gridSpan = (BOARD_SIZE - 1) * cellSize;
 
-    Stone grid[BOARD_SIZE][BOARD_SIZE]; 
+    Stone grid[BOARD_SIZE][BOARD_SIZE];
+    int currentTurn;
 
     Board();
-    void Reset();
+    void reset();
+    void setTurn(int b);
+    void applyMove(BoardPoint t);
 
-    bool IsInside(int r, int c) const;
+    bool init(int r, int c) const;
     Stone GetStone(int r, int c) const;
     void SetStone(int r, int c, Stone stone);
 
@@ -42,6 +45,4 @@ private:
     Color blackStoneColor = {25, 25, 25, 255};
     Color whiteStoneColor = {245, 245, 245, 255};
 };
-
-
 
