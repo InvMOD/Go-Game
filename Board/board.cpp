@@ -1,4 +1,5 @@
 #include "Board.hpp"
+#include <algorithm>
 #include <cmath>
 #include <queue>
 #include <set>
@@ -6,6 +7,7 @@
 
 Board::Board() {
     reset();
+    updateLayout(696, 696);
 }
 
 void Board::reset() {
@@ -116,28 +118,61 @@ void Board::applyMove(BoardPoint t) {
     currentTurn = (currentTurn == 1) ? 2 : 1;
 }
 
+void Board::updateLayout(int screenWidth, int screenHeight) {
+    float topMargin = 50.0f;
+    float bottomMargin = 25.0f;
+    float sideMargin = 25.0f;
+
+    float availW = (float)screenWidth - 2.0f * sideMargin;
+    float availH = (float)screenHeight - topMargin - bottomMargin;
+    float availSize = std::min(availW, availH);
+    if (availSize < 50.0f) availSize = 50.0f;
+
+    cellSize = availSize / (BOARD_SIZE + 0.3f);
+    gridSpan = (BOARD_SIZE - 1) * cellSize;
+    boardPadding = cellSize * 0.65f;
+
+    float centerX = (float)screenWidth * 0.5f;
+    float centerY = topMargin + availH * 0.5f;
+
+    offsetX = centerX - gridSpan * 0.5f;
+    offsetY = centerY - gridSpan * 0.5f;
+}
+
 Vector2 Board::BoardToScreen(int r, int c) const {
     return {
-        (float)(margin + c * cellSize),
-        (float)(margin + r * cellSize)
+        offsetX + c * cellSize,
+        offsetY + r * cellSize
     };
 }
 
 BoardPoint Board::ScreenToBoard(Vector2 mousePos) const {
-    int c = std::round((mousePos.x - margin) / (float)cellSize);
-    int r = std::round((mousePos.y - margin) / (float)cellSize);
+    int c = std::round((mousePos.x - offsetX) / cellSize);
+    int r = std::round((mousePos.y - offsetY) / cellSize);
     return {r, c};
 }
 
 void Board::DrawBase() const {
-    ClearBackground(woodColor);
+    Rectangle boardRect = {
+        offsetX - boardPadding,
+        offsetY - boardPadding,
+        gridSpan + 2.0f * boardPadding,
+        gridSpan + 2.0f * boardPadding
+    };
 
-    DrawRectangleLines(margin - 12, margin - 12, gridSpan + 24, gridSpan + 24, lineDarkColor);
+    float shadowOffset = std::max(2.0f, cellSize * 0.08f);
+    DrawRectangleRec({boardRect.x + shadowOffset, boardRect.y + shadowOffset, boardRect.width, boardRect.height}, ColorAlpha(BLACK, 0.2f));
+    DrawRectangleRec(boardRect, woodColor);
 
+    float borderThickness = std::max(1.5f, cellSize * 0.04f);
+    DrawRectangleLinesEx(boardRect, borderThickness, lineDarkColor);
+
+    float lineThickness = std::max(1.0f, cellSize * 0.025f);
     for (int i = 0; i < BOARD_SIZE; ++i) {
-        int offset = margin + i * cellSize;
-        DrawLine(margin, offset, margin + gridSpan, offset, lineDarkColor);
-        DrawLine(offset, margin, offset, margin + gridSpan, lineDarkColor);
+        float x = offsetX + i * cellSize;
+        float y = offsetY + i * cellSize;
+        DrawLineEx({offsetX, y}, {offsetX + gridSpan, y}, lineThickness, lineDarkColor);
+        DrawLineEx({x, offsetY}, {x, offsetY + gridSpan}, lineThickness, lineDarkColor);
     }
 
     const BoardPoint starPoints[] = {
@@ -146,21 +181,25 @@ void Board::DrawBase() const {
         {6, 2}, {6, 6}
     };
 
+    float starRadius = std::max(2.0f, cellSize * 0.07f);
     for (const auto& p : starPoints) {
         Vector2 pos = BoardToScreen(p.r, p.c);
-        DrawCircleV(pos, 4.0f, lineDarkColor);
+        DrawCircleV(pos, starRadius, lineDarkColor);
     }
 }
 
 void Board::DrawStones() const {
     float radius = cellSize * 0.46f;
+    float shadowOffset = std::max(1.5f, cellSize * 0.05f);
 
     for (int r = 0; r < BOARD_SIZE; ++r) {
         for (int c = 0; c < BOARD_SIZE; ++c) {
             if (grid[r][c] == Stone::Empty) continue;
 
             Vector2 center = BoardToScreen(r, c);
-            DrawCircle(center.x + 2, center.y + 2, radius, ColorAlpha(BLACK, 0.25f));
+
+            // Đổ bóng quân cờ
+            DrawCircle(center.x + shadowOffset, center.y + shadowOffset, radius, ColorAlpha(BLACK, 0.25f));
 
             if (grid[r][c] == Stone::Black) {
                 DrawCircleV(center, radius, blackStoneColor);

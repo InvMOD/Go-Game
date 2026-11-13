@@ -16,9 +16,11 @@ struct BoardPoint {
 
 class Board { 
 public: 
-    const int cellSize = 64;
-    const int margin = 60;
-    const int gridSpan = (BOARD_SIZE - 1) * cellSize;
+    float cellSize;
+    float offsetX;
+    float offsetY;
+    float gridSpan;
+    float boardPadding;
 
     Stone grid[BOARD_SIZE][BOARD_SIZE];
     int currentTurn;
@@ -27,6 +29,7 @@ public:
     void reset();
     void setTurn(int b);
     void applyMove(BoardPoint t);
+    void updateLayout(int screenWidth, int screenHeight);
 
     bool init(int r, int c) const;
     Stone GetStone(int r, int c) const;
