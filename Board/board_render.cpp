@@ -18,13 +18,13 @@ BoardPoint Board::ScreenToBoard(Vector2 mousePos) const{
 }
 
 void Board::DrawBase() const{
-    ClearBackground(woodColor);
+    ClearBackground(BLACK);
     DrawRectangleLines(margin - 12, margin - 12, gridSpan + 24, gridSpan + 24, lineDarkColor);
 
     FOR(i, 0, BOARD_SIZE - 1){
         int offset = margin + i * cellSize;
-        DrawLine(margin, offset, margin + gridSpan, offset, lineDarkColor);
-        DrawLine(offset, margin, offset, margin + gridSpan, lineDarkColor);
+        DrawLine(margin, offset, margin + gridSpan, offset, WHITE);
+        DrawLine(offset, margin, offset, margin + gridSpan, WHITE);
     }
 
     const BoardPoint starPoints[] = {
@@ -35,7 +35,7 @@ void Board::DrawBase() const{
 
     for(const auto& p : starPoints){
         Vector2 pos = BoardToScreen(p.r, p.c);
-        DrawCircleV(pos, 4.0f, lineDarkColor);
+        DrawCircleV(pos, 4.0f, WHITE);
     }
 }
 
@@ -49,11 +49,11 @@ void Board::DrawStones() const{
             DrawCircle(center.x + 2, center.y + 2, radius, ColorAlpha(BLACK, 0.25f));
 
             if(grid[r][c] == Stone::Black){
-                DrawCircleV(center, radius, blackStoneColor);
+                DrawCircleV(center, radius, BLUE);
                 DrawCircleLines(center.x, center.y, radius, {60, 60, 60, 225});
             }
             else{
-                DrawCircleV(center, radius, whiteStoneColor);
+                DrawCircleV(center, radius, RED);
                 DrawCircleLines(center.x, center.y, radius, {200, 200, 200, 225});              
             }
         }
