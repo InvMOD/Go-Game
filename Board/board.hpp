@@ -14,6 +14,15 @@ struct BoardPoint {
     int r, c;
 }; 
 
+struct BoardScore {
+    int blackTerritory;
+    int whiteTerritory;
+    int blackCaptures;
+    int whiteCaptures;
+    int blackTotal;
+    int whiteTotal;
+}; 
+
 class Board { 
 public: 
     float cellSize;
@@ -24,6 +33,8 @@ public:
 
     Stone grid[BOARD_SIZE][BOARD_SIZE];
     int currentTurn;
+    int blackCaptures;
+    int whiteCaptures;
 
     Board();
     void reset();
@@ -38,9 +49,12 @@ public:
     Vector2 BoardToScreen(int r, int c) const;
     BoardPoint ScreenToBoard(Vector2 mousePos) const;
 
+    BoardScore calculateScore() const;
+
     void DrawBase() const; 
     void DrawStones() const;
     void DrawGhost(BoardPoint hoverPoint, Stone currentTurn) const;
+    void DrawTerritory() const;
 
 private: 
     Color woodColor = {220, 179, 92, 255}; // RGB Color

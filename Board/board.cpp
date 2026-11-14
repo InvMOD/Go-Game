@@ -17,6 +17,8 @@ void Board::reset() {
         }
     }
     currentTurn = 1;
+    blackCaptures = 0;
+    whiteCaptures = 0;
 }
 
 void Board::setTurn(int b) {
@@ -70,6 +72,71 @@ static void getGroupAndLiberties(const Stone b[BOARD_SIZE][BOARD_SIZE], int star
     }
 }
 
+static void getTerritory(const Stone b[BOARD_SIZE][BOARD_SIZE], Stone territoryMap[BOARD_SIZE][BOARD_SIZE], int& blackTerritory, int& whiteTerritory) {
+    blackTerritory = 0;
+    whiteTerritory = 0;
+    bool visited[BOARD_SIZE][BOARD_SIZE] = {false};
+
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c) {
+            territoryMap[r][c] = Stone::Empty;
+        }
+    }
+
+    const int dr[] = {-1, 1, 0, 0};
+    const int dc[] = {0, 0, -1, 1};
+
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c) {
+            if (b[r][c] == Stone::Empty && !visited[r][c]) {
+                std::vector<BoardPoint> region;
+                std::queue<BoardPoint> q;
+                q.push({r, c});
+                visited[r][c] = true;
+
+                bool touchesBlack = false;
+                bool touchesWhite = false;
+
+                while (!q.empty()) {
+                    BoardPoint p = q.front();
+                    q.pop();
+                    region.push_back(p);
+
+                    for (int i = 0; i < 4; ++i) {
+                        int nr = p.r + dr[i];
+                        int nc = p.c + dc[i];
+                        if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) continue;
+
+                        if (b[nr][nc] == Stone::Black) {
+                            touchesBlack = true;
+                        } else if (b[nr][nc] == Stone::White) {
+                            touchesWhite = true;
+                        } else if (b[nr][nc] == Stone::Empty && !visited[nr][nc]) {
+                            visited[nr][nc] = true;
+                            q.push({nr, nc});
+                        }
+                    }
+                }
+
+                Stone owner = Stone::Empty;
+                if (touchesBlack && !touchesWhite) {
+                    owner = Stone::Black;
+                    blackTerritory += static_cast<int>(region.size());
+                } else if (touchesWhite && !touchesBlack) {
+                    owner = Stone::White;
+                    whiteTerritory += static_cast<int>(region.size());
+                }
+
+                if (owner != Stone::Empty) {
+                    for (const auto& p : region) {
+                        territoryMap[p.r][p.c] = owner;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void Board::applyMove(BoardPoint t) {
     if (!init(t.r, t.c) || grid[t.r][t.c] != Stone::Empty) return;
 
@@ -88,6 +155,7 @@ void Board::applyMove(BoardPoint t) {
     const int dr[] = {-1, 1, 0, 0};
     const int dc[] = {0, 0, -1, 1};
 
+    int capturedCount = 0;
     for (int i = 0; i < 4; ++i) {
         int nr = t.r + dr[i];
         int nc = t.c + dc[i];
@@ -100,6 +168,7 @@ void Board::applyMove(BoardPoint t) {
                 for (const auto& p : oppGroup) {
                     tempGrid[p.r][p.c] = Stone::Empty;
                 }
+                capturedCount += static_cast<int>(oppGroup.size());
             }
         }
     }
@@ -115,6 +184,13 @@ void Board::applyMove(BoardPoint t) {
             grid[i][j] = tempGrid[i][j];
         }
     }
+
+    if (myStone == Stone::Black) {
+        blackCaptures += capturedCount;
+    } else {
+        whiteCaptures += capturedCount;
+    }
+
     currentTurn = (currentTurn == 1) ? 2 : 1;
 }
 
@@ -224,4 +300,41 @@ void Board::DrawGhost(BoardPoint hoverPoint, Stone turnStone) const {
         : ColorAlpha(whiteStoneColor, 0.6f);
 
     DrawCircleV(center, radius, ghostColor);
+}
+
+BoardScore Board::calculateScore() const {
+    Stone territoryMap[BOARD_SIZE][BOARD_SIZE];
+    int blackTerritory = 0;
+    int whiteTerritory = 0;
+    getTerritory(grid, territoryMap, blackTerritory, whiteTerritory);
+
+    BoardScore score;
+    score.blackTerritory = blackTerritory;
+    score.whiteTerritory = whiteTerritory;
+    score.blackCaptures = blackCaptures;
+    score.whiteCaptures = whiteCaptures;
+    score.blackTotal = blackTerritory + blackCaptures;
+    score.whiteTotal = whiteTerritory + whiteCaptures;
+    return score;
+}
+
+void Board::DrawTerritory() const {
+    Stone territoryMap[BOARD_SIZE][BOARD_SIZE];
+    int blackTerritory = 0;
+    int whiteTerritory = 0;
+    getTerritory(grid, territoryMap, blackTerritory, whiteTerritory);
+
+    float markSize = cellSize * 0.28f;
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c) {
+            if (territoryMap[r][c] == Stone::Empty) continue;
+
+            Vector2 center = BoardToScreen(r, c);
+            Color markColor = (territoryMap[r][c] == Stone::Black)
+                ? ColorAlpha(blackStoneColor, 0.7f)
+                : ColorAlpha(whiteStoneColor, 0.85f);
+
+            DrawRectangle(center.x - markSize * 0.5f, center.y - markSize * 0.5f, markSize, markSize, markColor);
+        }
+    }
 }
