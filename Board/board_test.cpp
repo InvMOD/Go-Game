@@ -33,19 +33,13 @@ int main(){
             }
         } else {
             BoardPoint hoverPoint = board.ScreenToBoard(mouse);
-
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                board.applyMove(hoverPoint);
-            }
-
-            if (IsKeyPressed(KEY_R)) {
+            if (IsKeyPressed(KEY_U)) board.undo();
+            if (IsKeyPressed(KEY_S)) showScore = !showScore;
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) board.applyMove(hoverPoint);
+            if (IsKeyPressed(KEY_R)){
                 board.reset();
                 board.setTurn(1);
                 showScore = false;
-            }
-
-            if (IsKeyPressed(KEY_S)) {
-                showScore = !showScore;
             }
         }
 
@@ -73,7 +67,11 @@ int main(){
                 // Vẽ giao diện thông tin
                 DrawText(board.currentTurn == static_cast<int>(Stone::Black) ? "Turn: BLACK" : "Turn: WHITE", 16, 14, 20, BLACK);
                 DrawText(TextFormat("Captures - B: %d | W: %d", board.blackCaptures, board.whiteCaptures), 16, 36, 15, DARKGRAY);
-                DrawText("Press [S] Score | [R] Reset", screenWidth - 250, 16, 18, DARKGRAY);
+                
+                const char* guideText = "Press [U] Undo | [S] Score | [R] Reset";
+                int guideFontSize = 17;
+                int guideWidth = MeasureText(guideText, guideFontSize);
+                DrawText(guideText, screenWidth - guideWidth - 16, 16, guideFontSize, DARKGRAY);
 
                 if (showScore) {
                     BoardScore score = board.calculateScore();
