@@ -2,6 +2,7 @@
 #include <vector>
 #include <set>
 #include <utility>
+#include <cstdint>
 #include "../lib/raylib.h"
 
 const int BOARD_SIZE = 9;
@@ -31,6 +32,7 @@ struct BoardState {
     int blackCaptures;
     int whiteCaptures;
     BoardPoint lastMove;
+    uint64_t hash;
 };
 
 class Board { 
@@ -46,12 +48,13 @@ public:
     int blackCaptures;
     int whiteCaptures;
     BoardPoint lastMove;
+    uint64_t currentHash;
     std::vector<BoardState> history;
 
     Board();
     void reset();
     void setTurn(int b);
-    void applyMove(BoardPoint t);
+    bool applyMove(BoardPoint t);
     bool undo();
     bool canUndo() const;
     void updateLayout(int screenWidth, int screenHeight);
@@ -64,6 +67,10 @@ public:
     BoardPoint ScreenToBoard(Vector2 mousePos) const;
 
     BoardScore calculateScore() const;
+
+    bool isSuperko(uint64_t hash) const;
+    static uint64_t computeHash(const Stone b[BOARD_SIZE][BOARD_SIZE]);
+    static void initZobrist();
 
     void DrawBase() const; 
     void DrawStones() const;

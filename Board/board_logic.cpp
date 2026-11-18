@@ -2,10 +2,51 @@
 #include <algorithm>
 #include <cmath>
 #include <queue>
+#include <random>
 #include <set>
 #include <vector>
 
+static uint64_t zobristTable[BOARD_SIZE][BOARD_SIZE][3];
+static bool zobristInitialized = false;
+
+void Board::initZobrist() {
+    if (zobristInitialized) return;
+    std::mt19937_64 rng(0x123456789ABCDEF0ULL);
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c) {
+            zobristTable[r][c][0] = 0; // Empty
+            zobristTable[r][c][1] = rng(); // Black
+            zobristTable[r][c][2] = rng(); // White
+        }
+    }
+    zobristInitialized = true;
+}
+
+uint64_t Board::computeHash(const Stone b[BOARD_SIZE][BOARD_SIZE]) {
+    initZobrist();
+    uint64_t h = 0;
+    for (int r = 0; r < BOARD_SIZE; ++r) {
+        for (int c = 0; c < BOARD_SIZE; ++c) {
+            int stoneType = static_cast<int>(b[r][c]);
+            if (stoneType != 0) {
+                h ^= zobristTable[r][c][stoneType];
+            }
+        }
+    }
+    return h;
+}
+
+bool Board::isSuperko(uint64_t hash) const {
+    for (const auto& state : history) {
+        if (state.hash == hash) {
+            return true;
+        }
+    }
+    return false;
+}
+
 Board::Board() {
+    initZobrist();
     reset();
     updateLayout(696, 696);
 }
@@ -21,6 +62,7 @@ void Board::reset() {
     whiteCaptures = 0;
     lastMove = {-1, -1};
     history.clear();
+    currentHash = computeHash(grid);
 }
 
 void Board::setTurn(int b) {
@@ -139,8 +181,8 @@ void Board::getTerritory(const Stone b[BOARD_SIZE][BOARD_SIZE], Stone territoryM
     }
 }
 
-void Board::applyMove(BoardPoint t) {
-    if (!init(t.r, t.c) || grid[t.r][t.c] != Stone::Empty) return;
+bool Board::applyMove(BoardPoint t) {
+    if (!init(t.r, t.c) || grid[t.r][t.c] != Stone::Empty) return false;
 
     Stone myStone = (currentTurn == 1) ? Stone::Black : Stone::White;
     Stone oppStone = (currentTurn == 1) ? Stone::White : Stone::Black;
@@ -151,6 +193,7 @@ void Board::applyMove(BoardPoint t) {
             tempGrid[i][j] = grid[i][j];
         }
     }
+
     tempGrid[t.r][t.c] = myStone;
 
     const int dr[] = {-1, 1, 0, 0};
@@ -174,30 +217,20 @@ void Board::applyMove(BoardPoint t) {
         }
     }
 
-    // suicide
+    // 1. Suicide rule
     std::vector<BoardPoint> myGroup;
     std::set<std::pair<int, int>> myLibs;
     getGroupAndLiberties(tempGrid, t.r, t.c, myGroup, myLibs);
 
-    if (myLibs.empty()) return;
+    if (myLibs.empty()) return false;
 
-    // KO' rule
-    if (!history.empty()) {
-        bool isKo = true;
-        const auto& prevGrid = history.back().grid;
-        for (int i = 0; i < BOARD_SIZE; ++i) {
-            for (int j = 0; j < BOARD_SIZE; ++j) {
-                if (tempGrid[i][j] != prevGrid[i][j]) {
-                    isKo = false;
-                    break;
-                }
-            }
-            if (!isKo) break;
-        }
-        if (isKo) return; 
+    // 2. Superko rule (Zobrist Hash check against all historical positions)
+    uint64_t nextHash = computeHash(tempGrid);
+    if (isSuperko(nextHash)) {
+        return false; // Repetition of previous board state in game history
     }
 
-    // save state for redo
+    // 3. Save current state to history before updating
     BoardState state;
     for (int i = 0; i < BOARD_SIZE; ++i) {
         for (int j = 0; j < BOARD_SIZE; ++j) {
@@ -208,9 +241,10 @@ void Board::applyMove(BoardPoint t) {
     state.blackCaptures = blackCaptures;
     state.whiteCaptures = whiteCaptures;
     state.lastMove = lastMove;
+    state.hash = currentHash;
     history.push_back(state);
 
-    // new board
+    // 4. Update board
     for (int i = 0; i < BOARD_SIZE; ++i) {
         for (int j = 0; j < BOARD_SIZE; ++j) {
             grid[i][j] = tempGrid[i][j];
@@ -224,7 +258,9 @@ void Board::applyMove(BoardPoint t) {
     }
 
     lastMove = t;
+    currentHash = nextHash;
     currentTurn = (currentTurn == 1) ? 2 : 1;
+    return true;
 }
 
 bool Board::undo() {
@@ -242,6 +278,7 @@ bool Board::undo() {
     blackCaptures = prev.blackCaptures;
     whiteCaptures = prev.whiteCaptures;
     lastMove = prev.lastMove;
+    currentHash = prev.hash;
     return true;
 }
 

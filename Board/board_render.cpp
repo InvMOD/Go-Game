@@ -1,6 +1,5 @@
 #include "board.hpp"
-#include <algorithm>
-#include <cmath>
+#include "../lib/includes.hpp"
 
 void Board::updateLayout(int screenWidth, int screenHeight) {
     float topMargin = 50.0f;
