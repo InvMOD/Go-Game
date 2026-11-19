@@ -12,6 +12,7 @@ int main(){
     SetTargetFPS(60);
 
     Board board;
+    board.initAudio();
     board.setTurn(1);
     board.updateLayout(screenWidth, screenHeight);
     bool menuOpen = true;
@@ -30,6 +31,7 @@ int main(){
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
                 IsPlayButtonClicked(mouse, GetPlayButton(screenWidth, screenHeight))) {
                 menuOpen = false;
+                SetMouseCursor(MOUSE_CURSOR_DEFAULT);
             }
         } else {
             BoardPoint hoverPoint = board.ScreenToBoard(mouse);
@@ -101,6 +103,7 @@ int main(){
         EndDrawing();
     }
 
+    board.closeAudio();
     CloseWindow();
     return 0;
 }

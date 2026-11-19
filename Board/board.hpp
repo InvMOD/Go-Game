@@ -52,6 +52,7 @@ public:
     std::vector<BoardState> history;
 
     Board();
+    ~Board();
     void reset();
     void setTurn(int b);
     bool applyMove(BoardPoint t);
@@ -77,6 +78,10 @@ public:
     void DrawGhost(BoardPoint hoverPoint, Stone currentTurn) const;
     void DrawTerritory() const;
 
+    void initAudio();
+    void playStoneSound();
+    void closeAudio();
+
     static void getGroupAndLiberties(const Stone b[BOARD_SIZE][BOARD_SIZE], int startR, int startC,
                                      std::vector<BoardPoint>& group, std::set<std::pair<int, int>>& liberties);
     static void getTerritory(const Stone b[BOARD_SIZE][BOARD_SIZE], Stone territoryMap[BOARD_SIZE][BOARD_SIZE],
@@ -87,4 +92,7 @@ private:
     Color lineDarkColor = {50, 35, 20, 255}; 
     Color blackStoneColor = {25, 25, 25, 255};
     Color whiteStoneColor = {245, 245, 245, 255};
+
+    std::vector<Sound> stoneSounds;
+    bool audioLoaded = false;
 };

@@ -217,6 +217,7 @@ bool Board::applyMove(BoardPoint t) {
     lastMove = t;
     currentHash = nextHash;
     currentTurn = (currentTurn == 1) ? 2 : 1;
+    playStoneSound();
     return true;
 }
 
